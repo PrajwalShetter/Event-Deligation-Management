@@ -80,33 +80,46 @@
                 <p class="text-secondary mb-0">Review, filter, and approve event delegation registration requests.</p>
             </div>
 
-            <!-- Backend Search and Filter Form -->
-            <form action="${pageContext.request.contextPath}/admin/companies" method="get" class="d-flex gap-2 flex-wrap align-items-center">
-                <div class="input-group" style="width: 280px;">
-                    <span class="input-group-text bg-white border-end-0"><i class="bi bi-search text-muted"></i></span>
-                    <input type="text" name="search" value="<c:out value='${search}'/>" class="form-control border-start-0 ps-0" placeholder="Search name, email, city...">
+            <!-- View Toggle & Search/Filter Header Group -->
+            <div class="d-flex gap-3 align-items-center flex-wrap">
+                <!-- View Mode Toggle Buttons -->
+                <div class="btn-group shadow-sm" role="group" aria-label="View Mode Toggle">
+                    <button type="button" class="btn btn-outline-primary active" id="tableViewBtn" onclick="switchView('table')">
+                        <i class="bi bi-table"></i> Table
+                    </button>
+                    <button type="button" class="btn btn-outline-primary" id="cardViewBtn" onclick="switchView('card')">
+                        <i class="bi bi-grid-3x3-gap-fill"></i> Cards
+                    </button>
                 </div>
 
-                <div style="width: 170px;">
-                    <select name="status" class="form-select" onchange="this.form.submit()">
-                        <option value="">All Status</option>
-                        <option value="PENDING_REVIEW" ${status == 'PENDING_REVIEW' ? 'selected' : ''}>Pending Review</option>
-                        <option value="APPROVED" ${status == 'APPROVED' ? 'selected' : ''}>Approved</option>
-                        <option value="REJECTED" ${status == 'REJECTED' ? 'selected' : ''}>Rejected</option>
-                    </select>
-                </div>
+                <!-- Backend Search and Filter Form -->
+                <form action="${pageContext.request.contextPath}/admin/companies" method="get" class="d-flex gap-2 flex-wrap align-items-center">
+                    <div class="input-group" style="width: 260px;">
+                        <span class="input-group-text bg-white border-end-0"><i class="bi bi-search text-muted"></i></span>
+                        <input type="text" name="search" value="<c:out value='${search}'/>" class="form-control border-start-0 ps-0" placeholder="Search name, email, city...">
+                    </div>
 
-                <button type="submit" class="btn btn-primary-custom">
-                    <i class="bi bi-funnel-fill me-1"></i> Filter
-                </button>
-                <a href="${pageContext.request.contextPath}/admin/companies" class="btn btn-outline-secondary">
-                    Reset
-                </a>
-            </form>
+                    <div style="width: 150px;">
+                        <select name="status" class="form-select" onchange="this.form.submit()">
+                            <option value="">All Status</option>
+                            <option value="PENDING_REVIEW" ${status == 'PENDING_REVIEW' ? 'selected' : ''}>Pending Review</option>
+                            <option value="APPROVED" ${status == 'APPROVED' ? 'selected' : ''}>Approved</option>
+                            <option value="REJECTED" ${status == 'REJECTED' ? 'selected' : ''}>Rejected</option>
+                        </select>
+                    </div>
+
+                    <button type="submit" class="btn btn-primary-custom">
+                        <i class="bi bi-funnel-fill me-1"></i> Filter
+                    </button>
+                    <a href="${pageContext.request.contextPath}/admin/companies" class="btn btn-outline-secondary">
+                        Reset
+                    </a>
+                </form>
+            </div>
         </div>
 
-        <!-- Main Data Card -->
-        <div class="card card-table overflow-hidden mb-4">
+        <!-- 1. TABLE VIEW CONTAINER -->
+        <div id="tableViewContainer" class="card card-table overflow-hidden mb-4">
             <div class="card-body p-0">
                 <div class="table-responsive">
                     <table class="table table-hover align-middle mb-0">
@@ -125,20 +138,20 @@
                         <tbody>
                             <c:choose>
                                 <c:when test="${not empty companies}">
-                                    <c:forEach var="comp" items="${companies}" varStatus="status">
+                                    <c:forEach var="comp" items="${companies}" varStatus="statusVar">
                                         <c:set var="isProcessed" value="${comp.getReviewStatus() == 'APPROVED' || comp.getReviewStatus() == 'REJECTED'}" />
                                         <tr>
-                                            <td class="ps-4 fw-semibold text-secondary">${status.count}</td>
+                                            <td class="ps-4 fw-semibold text-secondary">${statusVar.count}</td>
                                             <td>
-                                                <div class="fw-bold">${comp.getCompanyName()}</div>
+                                                <div class="fw-bold"><c:out value="${comp.getCompanyName()}"/></div>
                                                 <c:if test="${not empty comp.getEmployeeSize()}">
                                                     <small class="text-muted">Size: ${comp.getEmployeeSize()}</small>
                                                 </c:if>
                                             </td>
-                                            <td>${comp.getEmail()}</td>
-                                            <td>${comp.getContactNumber()}</td>
-                                            <td><code>${comp.getGstinNumber()}</code></td>
-                                            <td>${comp.getCity()}<c:if test="${not empty comp.getState()}">, ${comp.getState()}</c:if></td>
+                                            <td><c:out value="${comp.getEmail()}"/></td>
+                                            <td><c:out value="${comp.getContactNumber()}"/></td>
+                                            <td><code><c:out value="${comp.getGstinNumber()}"/></code></td>
+                                            <td><c:out value="${comp.getCity()}"/><c:if test="${not empty comp.getState()}">, <c:out value="${comp.getState()}"/></c:if></td>
                                             <td>
                                                 <span class="badge
                                                     <c:choose>
@@ -157,14 +170,14 @@
                                                         <i class="bi bi-eye"></i>
                                                     </button>
 
-                                                    <!-- 2. Approve Button (Disabled if already processed) -->
+                                                    <!-- 2. Approve Button -->
                                                     <form action="${pageContext.request.contextPath}/admin/company/accept/${comp.getId()}" method="post" class="d-inline">
                                                         <button type="submit" class="btn btn-sm btn-outline-success ${isProcessed ? 'disabled' : ''}" title="Approve Request" ${isProcessed ? 'disabled' : ''}>
                                                             <i class="bi bi-check-lg"></i>
                                                         </button>
                                                     </form>
 
-                                                    <!-- 3. Reject Button (Disabled if already processed) -->
+                                                    <!-- 3. Reject Button -->
                                                     <button type="button" class="btn btn-sm btn-outline-danger ${isProcessed ? 'disabled' : ''}" title="Reject Request"
                                                             <c:if test="${isProcessed}">disabled</c:if>
                                                             <c:if test="${!isProcessed}">onclick="handleReject('${comp.getId()}')"</c:if>>
@@ -190,34 +203,116 @@
             </div>
         </div>
 
-        <!-- Pagination Navigation Component -->
+        <!-- 2. CARD / GRID VIEW CONTAINER (Hidden by default) -->
+        <div id="cardViewContainer" class="row row-cols-1 row-cols-md-2 row-cols-xl-3 g-4 mb-4 d-none">
+            <c:choose>
+                <c:when test="${not empty companies}">
+                    <c:forEach var="comp" items="${companies}">
+                        <c:set var="isProcessed" value="${comp.getReviewStatus() == 'APPROVED' || comp.getReviewStatus() == 'REJECTED'}" />
+                        <div class="col">
+                            <div class="card border-0 shadow-sm rounded-4 h-100 position-relative bg-white">
+                                <div class="card-body p-4">
+                                    <div class="d-flex justify-content-between align-items-start mb-3">
+                                        <div>
+                                            <h5 class="fw-bold mb-1"><c:out value="${comp.getCompanyName()}"/></h5>
+                                            <span class="badge
+                                                <c:choose>
+                                                    <c:when test='${comp.getReviewStatus() == "APPROVED"}'>badge-approved</c:when>
+                                                    <c:when test='${comp.getReviewStatus() == "REJECTED"}'>badge-rejected</c:when>
+                                                    <c:otherwise>badge-pending</c:otherwise>
+                                                </c:choose> px-2 py-1">
+                                                <c:out value="${comp.getReviewStatus()}"/>
+                                            </span>
+                                        </div>
+                                        <c:if test="${not empty comp.getEmployeeSize()}">
+                                            <span class="badge bg-light text-secondary border">Size: ${comp.getEmployeeSize()}</span>
+                                        </c:if>
+                                    </div>
+
+                                    <p class="text-secondary small mb-2"><i class="bi bi-envelope me-1"></i> <c:out value="${comp.getEmail()}"/></p>
+                                    <p class="text-secondary small mb-2"><i class="bi bi-telephone me-1"></i> <c:out value="${comp.getContactNumber()}"/></p>
+                                    <p class="text-secondary small mb-2"><i class="bi bi-geo-alt me-1"></i> <c:out value="${comp.getCity()}"/><c:if test="${not empty comp.getState()}">, <c:out value="${comp.getState()}"/></c:if></p>
+                                    <p class="text-secondary small mb-3"><strong>GSTIN:</strong> <code><c:out value="${comp.getGstinNumber()}"/></code></p>
+
+                                    <div class="d-flex justify-content-between align-items-center pt-3 border-top">
+                                        <button type="button" class="btn btn-sm btn-outline-info px-3"
+                                                onclick="openDetailsModal('${comp.getId()}', '${comp.getCompanyName()}', '${comp.getEmail()}', '${comp.getContactNumber()}', '${comp.getEmployeeSize()}', '${comp.getGstinNumber()}', '${comp.getAddress()}', '${comp.getCountry()}', '${comp.getState()}', '${comp.getCity()}', '${comp.getPincode()}', '${comp.getMapLink()}', '${comp.getLogoName()}', '${comp.getReviewStatus()}')">
+                                            <i class="bi bi-eye me-1"></i> View Details
+                                        </button>
+
+                                        <div class="d-flex gap-1">
+                                            <form action="${pageContext.request.contextPath}/admin/company/accept/${comp.getId()}" method="post" class="d-inline">
+                                                <button type="submit" class="btn btn-sm btn-outline-success ${isProcessed ? 'disabled' : ''}" title="Approve" ${isProcessed ? 'disabled' : ''}>
+                                                    <i class="bi bi-check-lg"></i>
+                                                </button>
+                                            </form>
+                                            <button type="button" class="btn btn-sm btn-outline-danger ${isProcessed ? 'disabled' : ''}" title="Reject"
+                                                    <c:if test="${isProcessed}">disabled</c:if>
+                                                    <c:if test="${!isProcessed}">onclick="handleReject('${comp.getId()}')"</c:if>>
+                                                <i class="bi bi-x-lg"></i>
+                                            </button>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </c:forEach>
+                </c:when>
+                <c:otherwise>
+                    <div class="col-12 text-center py-5 text-secondary">
+                        <i class="bi bi-inbox fs-2 d-block mb-2 text-muted"></i>
+                        No registered companies found.
+                    </div>
+                </c:otherwise>
+            </c:choose>
+        </div>
+
+        <!-- 3. Smart Compact Pagination Component (Prevents 10k items horizontal overflow) -->
         <c:if test="${pagination.totalPages > 1}">
             <nav class="mt-4">
                 <ul class="pagination justify-content-center">
 
-                    <!-- Previous -->
+                    <!-- Previous Button -->
                     <li class="page-item ${pagination.currentPage == 0 ? 'disabled' : ''}">
-                        <a class="page-link"
-                           href="?page=${pagination.currentPage - 1}&search=${search}&status=${status}">
-                            Previous
+                        <a class="page-link" href="?page=${pagination.currentPage - 1}&search=${search}&status=${status}">
+                            <i class="bi bi-chevron-left"></i> Previous
                         </a>
                     </li>
 
-                    <!-- Page numbers -->
-                    <c:forEach begin="0" end="${pagination.totalPages - 1}" var="i">
-                        <li class="page-item ${pagination.currentPage == i ? 'active' : ''}">
-                            <a class="page-link"
-                               href="?page=${i}&search=${search}&status=${status}">
-                                ${i + 1}
-                            </a>
+                    <c:set var="curr" value="${pagination.currentPage}" />
+                    <c:set var="total" value="${pagination.totalPages}" />
+
+                    <!-- First Page & Ellipsis -->
+                    <c:if test="${curr > 2}">
+                        <li class="page-item">
+                            <a class="page-link" href="?page=0&search=${search}&status=${status}">1</a>
                         </li>
+                        <c:if test="${curr > 3}">
+                            <li class="page-item disabled"><span class="page-link">...</span></li>
+                        </c:if>
+                    </c:if>
+
+                    <!-- Surrounding Pages Window -->
+                    <c:forEach begin="0" end="${total - 1}" var="i">
+                        <c:if test="${i >= curr - 2 && i <= curr + 2}">
+                            <li class="page-item ${curr == i ? 'active' : ''}">
+                                <a class="page-link" href="?page=${i}&search=${search}&status=${status}">${i + 1}</a>
+                            </li>
+                        </c:if>
                     </c:forEach>
 
-                    <!-- Next -->
+                    <!-- Ellipsis & Last Page -->
+                    <c:if test="${curr < total - 3}">
+                        <li class="page-item disabled"><span class="page-link">...</span></li>
+                        <li class="page-item">
+                            <a class="page-link" href="?page=${total - 1}&search=${search}&status=${status}">${total}</a>
+                        </li>
+                    </c:if>
+
+                    <!-- Next Button -->
                     <li class="page-item ${pagination.currentPage == pagination.totalPages - 1 ? 'disabled' : ''}">
-                        <a class="page-link"
-                           href="?page=${pagination.currentPage + 1}&search=${search}&status=${status}">
-                            Next
+                        <a class="page-link" href="?page=${pagination.currentPage + 1}&search=${search}&status=${status}">
+                            Next <i class="bi bi-chevron-right"></i>
                         </a>
                     </li>
 
@@ -372,6 +467,36 @@
         const contextPath = "${pageContext.request.contextPath}";
         let currentLogoUrl = "";
 
+        // View Mode Switcher Function
+        function switchView(mode) {
+            const tableView = document.getElementById('tableViewContainer');
+            const cardView = document.getElementById('cardViewContainer');
+            const tableBtn = document.getElementById('tableViewBtn');
+            const cardBtn = document.getElementById('cardViewBtn');
+
+            if (mode === 'card') {
+                tableView.classList.add('d-none');
+                cardView.classList.remove('d-none');
+                cardBtn.classList.add('active');
+                tableBtn.classList.remove('active');
+                localStorage.setItem('adminCompanyViewPreference', 'card');
+            } else {
+                cardView.classList.add('d-none');
+                tableView.classList.remove('d-none');
+                tableBtn.classList.add('active');
+                cardBtn.classList.remove('active');
+                localStorage.setItem('adminCompanyViewPreference', 'table');
+            }
+        }
+
+        // Restore view preference on page load
+        document.addEventListener('DOMContentLoaded', () => {
+            const savedPref = localStorage.getItem('adminCompanyViewPreference');
+            if (savedPref === 'card') {
+                switchView('card');
+            }
+        });
+
         function openDetailsModal(id, name, email, contact, empSize, gstin, address, country, state, city, pincode, mapLink, logoName, status) {
             document.getElementById('mCompanyName').textContent = name;
             document.getElementById('mEmail').textContent = email;
@@ -411,7 +536,6 @@
             statusBadge.textContent = status ? status : 'PENDING_REVIEW';
             statusBadge.className = 'badge ' + (status === 'APPROVED' ? 'badge-approved' : (status === 'REJECTED' ? 'badge-rejected' : 'badge-pending'));
 
-            // Action form bindings & disable buttons if already approved or rejected
             const approveBtn = document.getElementById('modalApproveBtn');
             const rejectBtn = document.getElementById('modalRejectBtn');
 
@@ -436,7 +560,7 @@
                 handleReject(id);
             };
 
-        var myModal = new bootstrap.Modal(document.getElementById('companyDetailsModal'));
+            var myModal = new bootstrap.Modal(document.getElementById('companyDetailsModal'));
             myModal.show();
         }
 
