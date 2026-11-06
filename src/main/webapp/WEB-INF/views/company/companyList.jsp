@@ -442,11 +442,11 @@
                         <p class="text-secondary small mb-3">
                             Please provide a reason for rejecting this company. This feedback will be recorded.
                         </p>
-                        <div class="mb-3">
-                            <label for="rejectFeedback" class="form-label fw-semibold">Rejection Reason <span class="text-danger">*</span></label>
-                            <textarea class="form-control" id="rejectFeedback" name="rejectFeedback" rows="4" placeholder="Enter reason for rejection..." required></textarea>
-                            <div class="invalid-feedback">Rejection feedback is required.</div>
-                        </div>
+                       <div class="mb-3">
+                           <label for="rejectFeedback" class="form-label fw-semibold">Rejection Reason <span class="text-danger">*</span></label>
+                           <textarea class="form-control" id="rejectFeedback" name="rejectFeedback" rows="4" placeholder="Enter reason for rejection (min 8 characters)..." minlength="8" maxlength="1000" required></textarea>
+                           <div class="invalid-feedback" id="feedbackErrorMsg">Rejection feedback must be between 8 and 1000 characters.</div>
+                       </div>
                     </div>
                     <div class="modal-footer bg-light">
                         <button type="button" class="btn btn-secondary px-4" data-bs-dismiss="modal">Cancel</button>
@@ -588,10 +588,24 @@
 
         document.getElementById('rejectForm').addEventListener('submit', function(event) {
             const feedbackInput = document.getElementById('rejectFeedback');
-            if (!feedbackInput.value || feedbackInput.value.trim() === '') {
+            const value = feedbackInput.value.trim();
+            const errorMsg = document.getElementById('feedbackErrorMsg');
+
+            if (!value || value.length < 8 || value.length > 1000) {
                 event.preventDefault();
                 feedbackInput.classList.add('is-invalid');
+
+                if (!value) {
+                    errorMsg.textContent = "Rejection feedback is required.";
+                } else if (value.length < 8) {
+                    errorMsg.textContent = "Rejection reason must be at least 8 characters long.";
+                } else {
+                    errorMsg.textContent = "Rejection reason cannot exceed 1000 characters.";
+                }
+
                 feedbackInput.focus();
+            } else {
+                feedbackInput.classList.remove('is-invalid');
             }
         });
     </script>
