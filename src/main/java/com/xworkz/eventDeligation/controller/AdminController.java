@@ -97,28 +97,6 @@ public class AdminController {
         return "admin/adminProfile";
     }
 
-//    @GetMapping("companyListPage")
-//    public String getCompanyListPage(HttpSession session, HttpServletResponse response, Model model){
-//        response.setHeader("Cache-Control", "no-cache, no-store, must-revalidate");
-//        response.setHeader("Pragma", "no-cache");
-//        response.setDateHeader("Expires", 0);
-//
-//        String email = (String) session.getAttribute("loggedInEmail");
-//
-//        if (email == null) {
-//            return "redirect:/loginPage";
-//        }
-//
-//        AdminDto admin = adminService.findByEmail(email);
-//        if (admin == null) {
-//            session.invalidate();
-//            return "redirect:/loginPage";
-//        }
-//        model.addAttribute("admin", admin);
-//        return "company/companyList";
-//    }
-
-
     @PostMapping("register")
     public String saveAdmin(@Valid AdminDto adminDto, BindingResult binding, RedirectAttributes redirectAttributes){
         System.out.println(adminDto);
