@@ -80,4 +80,7 @@ public class CompanyEntity {
 
     @Column(name = "update_token_expiry")
     private LocalDateTime updateTokenExpiry;
+
+    @Column(name = "otp_attempts")
+    private Integer otpAttempts = 0;
 }
