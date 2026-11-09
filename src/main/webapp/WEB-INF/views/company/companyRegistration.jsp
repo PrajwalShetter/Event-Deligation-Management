@@ -407,7 +407,9 @@
                     break;
 
                 case "mapLink":
+                    const mapRegex = /^https?:\/\/(www\.)?(google\.[a-z.]+\/maps\/.*|maps\.app\.goo\.gl\/.*)$/;
                     if (!value) message = "Map link is required";
+                    else if (!mapRegex.test(value)) message = "Please enter a valid Google Maps link";
                     else if (value.length > 2000) message = "Map link cannot exceed 2000 characters";
                     break;
 
