@@ -27,4 +27,5 @@ public interface CompanyService {
     CompanyResponseDto updateCompanyUsingToken(String token, CompanyUpdateDto requestDto);
     CompanyPaginationDto getCompaniesByPagination(int page, int size);
     CompanyPaginationDto getFilteredCompaniesByPagination(String search, String status, int page, int size);
+    boolean sendCompanyLoginOtp(String email);
 }
