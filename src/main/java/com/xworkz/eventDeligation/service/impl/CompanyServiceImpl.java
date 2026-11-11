@@ -12,8 +12,10 @@ import com.xworkz.eventDeligation.exception.DuplicateCompanyException;
 import com.xworkz.eventDeligation.mapper.CompanyMapper;
 import com.xworkz.eventDeligation.repository.CompanyRepo;
 import com.xworkz.eventDeligation.service.CompanyService;
+import com.xworkz.eventDeligation.utils.EmailService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.ApplicationEventPublisher;
+import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.multipart.MultipartFile;
@@ -36,11 +38,15 @@ public class CompanyServiceImpl implements CompanyService {
     private final CompanyRepo companyRepository;
     private final CompanyMapper companyMapper;
     private final ApplicationEventPublisher eventPublisher;
+    private final PasswordEncoder passwordEncoder;
+    private final EmailService emailService;
 
-    public CompanyServiceImpl(CompanyRepo companyRepository, CompanyMapper companyMapper, ApplicationEventPublisher eventPublisher) {
+    public CompanyServiceImpl(CompanyRepo companyRepository, CompanyMapper companyMapper, ApplicationEventPublisher eventPublisher, PasswordEncoder passwordEncoder, EmailService emailService) {
         this.companyRepository = companyRepository;
         this.companyMapper = companyMapper;
         this.eventPublisher = eventPublisher;
+        this.passwordEncoder = passwordEncoder;
+        this.emailService = emailService;
     }
 
 
@@ -473,6 +479,38 @@ public class CompanyServiceImpl implements CompanyService {
                 totalRecords,
                 size
         );
+    }
+
+    private String generateOtp() {
+        SecureRandom secureRandom = new SecureRandom();
+        int otp = 100000 + secureRandom.nextInt(900000);
+        return String.valueOf(otp);
+    }
+
+    @Override
+    @Transactional
+    public boolean sendCompanyLoginOtp(String email) {
+        if(email ==null || email.trim().isEmpty()){
+            throw new IllegalArgumentException("Email is required");
+        }
+
+        CompanyEntity companyEntity = companyRepository.findByEmail(email.trim().toLowerCase());
+
+        if(companyEntity == null){
+            throw new IllegalArgumentException("company not found");
+        }
+        if(companyEntity.getReviewStatus() != CompanyReviewStatus.APPROVED){
+            throw new IllegalArgumentException("Your Company Registration is not approved yet ");
+        }
+
+        String otp = (generateOtp());
+        companyEntity.setOtp(passwordEncoder.encode(otp));
+        companyEntity.setOtpExpiryTime(LocalDateTime.now().plusMinutes(2));
+
+        companyEntity.setOtpAttempts(0);
+        companyRepository.updateCompany(companyEntity);
+        emailService.sendCompanyLoginOtpEmail(otp,companyEntity.getEmail());
+        return true;
     }
 }
 
