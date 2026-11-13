@@ -3,7 +3,9 @@ package com.xworkz.eventDeligation.controller;
 import com.xworkz.eventDeligation.dto.CompanyResponseDto;
 import com.xworkz.eventDeligation.dto.CompanyUpdateDto;
 import com.xworkz.eventDeligation.service.CompanyService;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
+import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.validation.BindingResult;
@@ -22,6 +24,12 @@ public class CompanyController {
     public CompanyController(CompanyService companyService) {
         this.companyService = companyService;
     }
+
+    @GetMapping("company/login")
+    public String getCompanyLogin() {
+        return "company/login";
+    }
+
 
     @GetMapping("company/update")
     public String getCompanyUpdatePage(@RequestParam("token") String token, Model model) {
@@ -78,6 +86,27 @@ public class CompanyController {
                 model.addAttribute("error", ex.getMessage());
                 return "company/invalidUpdateLink";
             }
+        }
+    }
+
+    @PostMapping("company/sendOtp")
+    public ResponseEntity<String> sendCompanyOtp(@RequestParam String email) {
+
+        try {
+            companyService.sendCompanyLoginOtp(email);
+
+            return ResponseEntity.ok("OTP sent successfully to your email");
+
+        } catch (IllegalArgumentException e) {
+
+            return ResponseEntity.badRequest().body(e.getMessage());
+
+        } catch (Exception e) {
+
+            e.printStackTrace();  // Print actual error in Eclipse console
+
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                    .body("Unable to send OTP: " + e.getMessage());
         }
     }
 }
