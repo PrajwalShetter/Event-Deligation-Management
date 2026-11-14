@@ -84,6 +84,35 @@
                                 <i class="bi bi-send-fill me-2"></i> Send OTP Code
                             </button>
                         </div>
+
+                        <!-- OTP Input Section (Hidden initially) -->
+                        <div id="otpSection" class="mt-4 pt-3 border-top d-none">
+                            <label for="otpCode" class="form-label fw-semibold">Enter 6-Digit OTP</label>
+                            <div class="input-group mb-3">
+                                <span class="input-group-text bg-light border-end-0"><i class="bi bi-key-fill text-muted"></i></span>
+                                <input type="text"
+                                       class="form-control border-start-0 ps-0 text-center fw-bold fs-5"
+                                       id="otpCode"
+                                       maxlength="6"
+                                       placeholder="------"
+                                       inputmode="numeric">
+                                <button class="btn btn-outline-success" type="button" id="verifyOtpBtn" onclick="verifyCompanyOtp()">
+                                    Verify OTP
+                                </button>
+                            </div>
+
+                            <!-- Timer & Resend Layout -->
+                            <div class="d-flex justify-content-between align-items-center mb-2">
+                                <span id="timerDisplay" class="text-muted small fw-semibold">
+                                    <i class="bi bi-clock me-1"></i> OTP Expires in <span id="countdown">02:00</span>
+                                </span>
+                                <button type="button" class="btn btn-link btn-sm text-decoration-none p-0" id="resendOtpLink" onclick="sendCompanyOtp()" disabled>
+                                    Resend OTP
+                                </button>
+                            </div>
+
+                            <div id="otpMessage" class="form-text text-center mt-2"></div>
+                        </div>
                     </form>
 
                 </div>
@@ -97,14 +126,18 @@
     <!-- Bootstrap JS Bundle -->
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
 
-    <script>
+<script>
+        let countdownTimer = null;
+
         function checkCompanyLoginEmail() {
             let emailInput = document.getElementById("companyEmail");
             let email = emailInput.value.trim();
             let sendOtpBtn = document.getElementById("sendOtpBtn");
             let emailMessage = document.getElementById("emailMessage");
+            let otpSection = document.getElementById("otpSection");
 
             sendOtpBtn.disabled = true;
+            otpSection.classList.add("d-none");
             emailMessage.innerHTML = "";
             emailInput.classList.remove("is-valid", "is-invalid");
 
@@ -128,7 +161,6 @@
             })
             .then(function(response) {
                 let data = response.data;
-
                 emailMessage.innerHTML = data.message;
 
                 if (data.exists && data.approved) {
@@ -140,7 +172,6 @@
                     emailInput.classList.add("is-invalid");
                     emailMessage.className = "form-text mt-2 text-danger fw-medium";
                 }
-
             })
             .catch(function(error) {
                 sendOtpBtn.disabled = true;
@@ -150,10 +181,128 @@
             });
         }
 
+        function startOtpTimer() {
+            let timeLeft = 120; // 2 minutes in seconds
+            let timerDisplay = document.getElementById("timerDisplay");
+            let resendLink = document.getElementById("resendOtpLink");
+
+            resendLink.disabled = true;
+            resendLink.classList.add("text-muted");
+
+            // Re-render the original HTML structure with the countdown span intact
+            timerDisplay.innerHTML = `<i class="bi bi-clock me-1"></i> Resend OTP in <span id="countdown">02:00</span>`;
+            let countdownElement = document.getElementById("countdown");
+
+            if (countdownTimer) clearInterval(countdownTimer);
+
+            countdownTimer = setInterval(function () {
+                let minutes = Math.floor(timeLeft / 60);
+                let seconds = timeLeft % 60;
+
+                minutes = minutes < 10 ? "0" + minutes : minutes;
+                seconds = seconds < 10 ? "0" + seconds : seconds;
+
+                if (countdownElement) {
+                    countdownElement.innerHTML = minutes + ":" + seconds;
+                }
+
+                if (timeLeft <= 0) {
+                    clearInterval(countdownTimer);
+                    timerDisplay.innerHTML = "OTP expired or time limit reached.";
+                    resendLink.disabled = false;
+                    resendLink.classList.remove("text-muted");
+                }
+                timeLeft--;
+            }, 1000);
+        }
+
         function sendCompanyOtp() {
-            // Your OTP trigger logic goes here
+            let email = document.getElementById("companyEmail").value.trim();
+            let sendOtpBtn = document.getElementById("sendOtpBtn");
+            let emailMessage = document.getElementById("emailMessage");
+            let otpSection = document.getElementById("otpSection");
+            let otpCodeInput = document.getElementById("otpCode");
+            let verifyOtpBtn = document.getElementById("verifyOtpBtn");
+
+            sendOtpBtn.disabled = true;
+            sendOtpBtn.innerHTML = `<span class="spinner-border spinner-border-sm me-2"></span> Sending OTP...`;
+
+            axios.post("${pageContext.request.contextPath}/company/sendOtp", null, {
+                params: { email: email }
+            })
+            .then(function(response) {
+                sendOtpBtn.innerHTML = `<i class="bi bi-check-circle-fill me-2"></i> OTP Sent!`;
+                sendOtpBtn.classList.remove("btn-primary-custom");
+                sendOtpBtn.classList.add("btn-success");
+
+                // Reset OTP field and state (re-enables fields if locked out previously)
+                otpCodeInput.value = "";
+                otpCodeInput.disabled = false;
+                verifyOtpBtn.disabled = false;
+                document.getElementById("otpMessage").innerHTML = "";
+
+                // Reveal the OTP input block
+                otpSection.classList.remove("d-none");
+                otpCodeInput.focus();
+
+                emailMessage.innerHTML = "OTP has been sent to your email. Please check your inbox.";
+                emailMessage.className = "form-text mt-2 text-success fw-medium";
+
+                // Restart the 2-minute countdown timer safely
+                startOtpTimer();
+            })
+            .catch(function(error) {
+                sendOtpBtn.disabled = false;
+                sendOtpBtn.innerHTML = `<i class="bi bi-send-fill me-2"></i> Send OTP Code`;
+                emailMessage.innerHTML = "Failed to send OTP. Please try again.";
+                emailMessage.className = "form-text mt-2 text-danger fw-medium";
+            });
+        }
+
+        function verifyCompanyOtp() {
+            let email = document.getElementById("companyEmail").value.trim();
+            let otp = document.getElementById("otpCode").value.trim();
+            let otpMessage = document.getElementById("otpMessage");
+
+            if (!/^\d{6}$/.test(otp)) {
+                otpMessage.innerHTML = "Please enter a valid 6-digit OTP.";
+                otpMessage.className = "form-text text-danger fw-medium";
+                return;
+            }
+
+            axios.post(
+                "${pageContext.request.contextPath}/company/verifyOtp",
+                null,
+                {
+                    params: {
+                        email: email,
+                        otp: otp
+                    }
+                }
+            )
+            .then(function(response) {
+                otpMessage.innerHTML = response.data;
+                otpMessage.className = "form-text text-success fw-medium";
+
+                document.getElementById("otpCode").disabled = true;
+                document.getElementById("verifyOtpBtn").disabled = true;
+                if (countdownTimer) clearInterval(countdownTimer);
+
+                // Redirect to company dashboard after successful verification
+                setTimeout(function() {
+                    window.location.href = "${pageContext.request.contextPath}/company/dashboard";
+                }, 1200);
+
+            })
+            .catch(function(error) {
+                let message = "Verification failed. Please try again.";
+                if (error.response && error.response.data) {
+                    message = error.response.data;
+                }
+                otpMessage.innerHTML = message;
+                otpMessage.className = "form-text text-danger fw-medium";
+            });
         }
     </script>
-
 </body>
 </html>
