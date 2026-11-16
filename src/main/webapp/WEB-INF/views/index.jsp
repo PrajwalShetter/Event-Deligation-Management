@@ -51,10 +51,10 @@
                                 <i class="bi bi-arrow-right ms-2"></i>
                             </a>
 
-                            <a href="${pageContext.request.contextPath}/login"
-                               class="btn btn-outline-light btn-lg">
-                                Sign In
-                            </a>
+                           <a href="${pageContext.request.contextPath}/company/login"
+                              class="btn btn-outline-light btn-lg">
+                               Sign In
+                           </a>
                         </div>
                     </div>
 
