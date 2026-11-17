@@ -260,49 +260,55 @@
         }
 
         function verifyCompanyOtp() {
-            let email = document.getElementById("companyEmail").value.trim();
-            let otp = document.getElementById("otpCode").value.trim();
-            let otpMessage = document.getElementById("otpMessage");
+                    let email = document.getElementById("companyEmail").value.trim();
+                    let otp = document.getElementById("otpCode").value.trim();
+                    let otpMessage = document.getElementById("otpMessage");
 
-            if (!/^\d{6}$/.test(otp)) {
-                otpMessage.innerHTML = "Please enter a valid 6-digit OTP.";
-                otpMessage.className = "form-text text-danger fw-medium";
-                return;
-            }
-
-            axios.post(
-                "${pageContext.request.contextPath}/company/verifyOtp",
-                null,
-                {
-                    params: {
-                        email: email,
-                        otp: otp
+                    if (!/^\d{6}$/.test(otp)) {
+                        otpMessage.innerHTML = "Please enter a valid 6-digit OTP.";
+                        otpMessage.className = "form-text text-danger fw-medium";
+                        return;
                     }
+
+                    axios.post(
+                        "${pageContext.request.contextPath}/company/verifyOtp",
+                        null,
+                        {
+                            params: {
+                                email: email,
+                                otp: otp
+                            }
+                        }
+                    )
+                    .then(function(response) {
+                        let data = response.data;
+
+                        if (data.success) {
+                            otpMessage.innerHTML = data.message || "OTP verified successfully!";
+                            otpMessage.className = "form-text text-success fw-medium";
+
+                            document.getElementById("otpCode").disabled = true;
+                            document.getElementById("verifyOtpBtn").disabled = true;
+                            if (countdownTimer) clearInterval(countdownTimer);
+                            setTimeout(function() {
+                                window.location.href = "${pageContext.request.contextPath}/company/dashboard";
+                            }, 1200);
+                        } else {
+                            otpMessage.innerHTML = data.message || "Invalid OTP. Please try again.";
+                            otpMessage.className = "form-text text-danger fw-medium";
+                        }
+                    })
+                    .catch(function(error) {
+                        let message = "Verification failed. Please try again.";
+                        if (error.response && error.response.data) {
+                            message = typeof error.response.data === "string"
+                                ? error.response.data
+                                : (error.response.data.message || message);
+                        }
+                        otpMessage.innerHTML = message;
+                        otpMessage.className = "form-text text-danger fw-medium";
+                    });
                 }
-            )
-            .then(function(response) {
-                otpMessage.innerHTML = response.data;
-                otpMessage.className = "form-text text-success fw-medium";
-
-                document.getElementById("otpCode").disabled = true;
-                document.getElementById("verifyOtpBtn").disabled = true;
-                if (countdownTimer) clearInterval(countdownTimer);
-
-                // Redirect to company dashboard after successful verification
-                setTimeout(function() {
-                    window.location.href = "${pageContext.request.contextPath}/company/dashboard";
-                }, 1200);
-
-            })
-            .catch(function(error) {
-                let message = "Verification failed. Please try again.";
-                if (error.response && error.response.data) {
-                    message = error.response.data;
-                }
-                otpMessage.innerHTML = message;
-                otpMessage.className = "form-text text-danger fw-medium";
-            });
-        }
     </script>
 </body>
 </html>
