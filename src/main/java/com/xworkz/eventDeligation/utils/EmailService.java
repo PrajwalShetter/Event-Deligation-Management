@@ -96,7 +96,7 @@ public class EmailService {
                 "Dear " + companyName + ",\n\n" +
                         "Your company registration request has been reviewed " +
                         "and approved by our team.\n\n" +
-                        "Thank you for registering with us."
+                        "Thank you for registering with us. you can proceed with login to forward with us"
         );
 
         javaMailSender.send(message);
@@ -147,6 +147,22 @@ public class EmailService {
 
                         "Regards,\n" +
                         "Event Delegation Management Team"
+        );
+
+        javaMailSender.send(message);
+    }
+
+    public void sendCompanyLoginOtpEmail(String otp, String email) {
+
+        SimpleMailMessage message = new SimpleMailMessage();
+
+        message.setTo(email);
+        message.setSubject("Company Login - OTP Verification");
+
+        message.setText(
+                "Your OTP for company login is: " + otp +
+                        "\n\nThis OTP is valid for 2 minutes." +
+                        "\nPlease do not share this OTP with anyone."
         );
 
         javaMailSender.send(message);
