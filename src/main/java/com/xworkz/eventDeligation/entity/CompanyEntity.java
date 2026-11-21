@@ -8,6 +8,8 @@ import lombok.NoArgsConstructor;
 
 import javax.persistence.*;
 import java.time.LocalDateTime;
+import java.util.ArrayList;
+import java.util.List;
 
 @Data
 @NoArgsConstructor
@@ -83,4 +85,7 @@ public class CompanyEntity {
 
     @Column(name = "otp_attempts")
     private Integer otpAttempts = 0;
+
+    @OneToMany(mappedBy = "company", cascade = CascadeType.ALL)
+    private List<DelegateEntity> delegates = new ArrayList<>();
 }
